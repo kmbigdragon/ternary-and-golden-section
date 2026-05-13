@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="itHUS_LOGO.png">
+<title>Ternary Search and Golden-section Search</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.2/math.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1c2130;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent-t: #3b82f6;
+    --accent-g: #10b981;
+    --accent-min: #f59e0b;
+    --accent-int: rgba(59,130,246,0.15);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 32px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  header span {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 57px);
+  }
+
+  /* LEFT PANEL */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .fn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .fn-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 9px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    transition: all 0.15s;
+    line-height: 1.5;
+  }
+  .fn-btn:hover { border-color: var(--border2); color: var(--text); }
+  .fn-btn.active { border-color: var(--accent-t); color: var(--accent-t); background: rgba(59,130,246,0.08); }
+  .fn-btn .fn-name { font-weight: 700; font-size: 10px; display: block; margin-bottom: 2px; }
+  .fn-btn .fn-expr { font-size: 11px; }
+
+  .algo-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .algo-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .algo-btn:hover { border-color: var(--border2); color: var(--text); }
+  .algo-btn.active-t { border-color: var(--accent-t); color: var(--accent-t); background: rgba(59,130,246,0.08); }
+  .algo-btn.active-g { border-color: var(--accent-g); color: var(--accent-g); background: rgba(16,185,129,0.08); }
+
+  .slider-group { display: flex; flex-direction: column; gap: 12px; }
+  .slider-row { display: flex; flex-direction: column; gap: 5px; }
+  .slider-head { display: flex; justify-content: space-between; align-items: center; }
+  .slider-name { font-size: 12px; color: var(--muted); }
+  .slider-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent-t);
+    cursor: pointer;
+  }
+
+  .action-btns { display: flex; flex-direction: column; gap: 6px; }
+  .btn {
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-run {
+    background: var(--accent-t);
+    color: #fff;
+  }
+  .btn-run:hover { background: #2563eb; }
+  .btn-run.running { background: #ef4444; }
+  .btn-step {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-step:hover { background: var(--surface); border-color: var(--border2); }
+  .btn-reset {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-reset:hover { color: var(--text); border-color: var(--border2); }
+
+  /* CENTER: CANVAS */
+  .panel-center {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .canvas-area {
+    flex: 1;
+    position: relative;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+  }
+  .tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent-t); }
+
+  /* RIGHT PANEL */
+  .panel-right {
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-name { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-bottom: 4px; }
+  .stat-val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); }
+  .stat-val.blue { color: var(--accent-t); }
+  .stat-val.green { color: var(--accent-g); }
+  .stat-val.amber { color: var(--accent-min); }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .compare-table th {
+    color: var(--muted);
+    text-align: left;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .compare-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .badge-t { background: rgba(59,130,246,0.15); color: var(--accent-t); }
+  .badge-g { background: rgba(16,185,129,0.15); color: var(--accent-g); }
+
+  .log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .log-entry {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: var(--surface2);
+    line-height: 1.6;
+    border-left: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .log-entry.highlight-t { border-left-color: var(--accent-t); }
+  .log-entry.highlight-g { border-left-color: var(--accent-g); }
+  .log-entry .log-step { color: var(--text); font-weight: 700; }
+  .log-entry .log-red { color: #f87171; }
+  .log-entry .log-green { color: var(--accent-g); }
+  .log-entry .log-amber { color: var(--accent-min); }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    padding: 8px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent-t);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .progress-label { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; height: auto; }
+    .panel-left, .panel-right { max-height: 300px; }
+  }
+  .fn-input-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .fn-input-row { display: flex; gap: 6px; align-items: center; }
+  .fn-prefix { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .fn-text-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 7px 10px; border-radius: 6px; outline: none; transition: border-color 0.15s;
+  }
+  .fn-text-input:focus { border-color: var(--accent-t); }
+  .fn-text-input.error { border-color: #ef4444; }
+  .fn-text-input.ok { border-color: var(--accent-g); }
+  .btn-apply {
+    background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 7px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+  }
+  .btn-apply:hover { border-color: var(--accent-t); color: var(--accent-t); }
+  .convex-badge {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    border-radius: 6px; font-family: var(--mono); font-size: 11px;
+    border: 1px solid transparent; transition: all 0.2s;
+  }
+  .convex-badge.checking { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+  .convex-badge.convex   { background: rgba(16,185,129,0.08); color: #10b981; border-color: rgba(16,185,129,0.3); }
+  .convex-badge.nonconvex{ background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+  .convex-badge.warning  { background: rgba(245,158,11,0.08); color: #f59e0b; border-color: rgba(245,158,11,0.3); }
+  .convex-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .eps-row { display: flex; align-items: center; gap: 8px; }
+  .eps-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 6px 10px; border-radius: 6px; outline: none; transition: border-color 0.15s;
+  }
+  .eps-input:focus { border-color: var(--accent-t); }
+  .eps-presets { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .eps-preset {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+    border-radius: 4px; cursor: pointer; transition: all 0.12s;
+  }
+  .eps-preset:hover { border-color: var(--accent-t); color: var(--accent-t); }
+  .eps-preset.active { border-color: var(--accent-t); color: var(--accent-t); background: rgba(59,130,246,0.08); }
+  .stop-reason { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+  .stop-eps   { background: rgba(16,185,129,0.15); color: #10b981; }
+  .stop-steps { background: rgba(245,158,11,0.15); color: #f59e0b; }
+</style>
+</head>
+<body>
+
+<header style="display: flex; gap: 20px; align-items: center;">
+  <img src="itHUS_LOGO.webp" style="width: 66px;"/>
+  <h1>Ternary Search & Golden Section Search — 2D</h1>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: controls -->
+  <div class="panel-left">
+    <div>
+      <div class="section-label">Nhập hàm tùy chỉnh f(x)</div>
+      <div class="fn-input-wrap">
+        <div class="fn-input-row">
+          <span class="fn-prefix">f(x) =</span>
+          <input type="text" class="fn-text-input" id="fnCustomInput" placeholder="x^2 + 2*x + 1" value="x^2 + 2*x + 1">
+          <button class="btn-apply" id="btnApplyFn" hidden>ÁP DỤNG</button>
+        </div>
+        <div class="convex-badge checking" id="convexBadge">
+          <span class="convex-dot"></span>
+          <span id="convexText">Nhập hàm và nhấn Áp dụng</span>
+        </div>
+        <div style="font-size:10px; color: var(--muted); font-family: var(--mono); line-height:1.6;">
+          Cú pháp: <span style="color:var(--text)">x^2</span>, <span style="color:var(--text)">sqrt(x)</span>, <span style="color:var(--text)">abs(x)</span>, <span style="color:var(--text)">sin(x)</span>, <span style="color:var(--text)">exp(x)</span>, <span style="color:var(--text)">log(x)</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Hàm mẫu</div>
+      <div class="fn-list" id="fnList">
+        <button class="fn-btn active" data-expr="x^2 + 2*x + 1">
+          <span class="fn-name">PERFECT SQUARE</span>
+          <span class="fn-expr">x² + 2x + 1</span>
+        </button>
+        <button class="fn-btn" data-expr="3*x^2 - 6*x + 5">
+          <span class="fn-name">QUADRATIC</span>
+          <span class="fn-expr">3x² − 6x + 5</span>
+        </button>
+        <button class="fn-btn" data-expr="exp(x) + exp(-x)">
+          <span class="fn-name">COSH-LIKE</span>
+          <span class="fn-expr">eˣ + e⁻ˣ</span>
+        </button>
+        <button class="fn-btn" data-expr="x^4 - 4*x^2 + 5">
+          <span class="fn-name">QUARTIC</span>
+          <span class="fn-expr">x⁴ − 4x² + 5</span>
+        </button>
+        <button class="fn-btn" data-expr="(x-2)^2 + abs(x)">
+          <span class="fn-name">NON-SMOOTH</span>
+          <span class="fn-expr">(x−2)² + |x|</span>
+        </button>
+        <button class="fn-btn" data-expr="sin(x) + x">
+          <span class="fn-name">NON-CONVEX ⚠</span>
+          <span class="fn-expr">sin(x) + x</span>
+        </button>
+        <button class="fn-btn" data-expr="-(x^2) + 4*x">
+          <span class="fn-name">CONCAVE ▲</span>
+          <span class="fn-expr">−x² + 4x</span>
+        </button>
+        <button class="fn-btn" data-expr="-(x^2) - 2*x + 3">
+          <span class="fn-name">CONCAVE ▲</span>
+          <span class="fn-expr">−x² − 2x + 3</span>
+        </button>
+        <button class="fn-btn" data-expr="-exp(x^2/10) + 5">
+          <span class="fn-name">CONCAVE BELL ▲</span>
+          <span class="fn-expr">−e^(x²/10) + 5</span>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Thuật toán</div>
+      <div class="algo-toggle">
+        <button class="algo-btn active-t" data-algo="ternary">TERNARY</button>
+        <button class="algo-btn" data-algo="golden">GOLDEN</button>
+        <button class="algo-btn" data-algo="both" style="grid-column:1/-1">SO SÁNH CẢ HAI</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Chế độ tối ưu</div>
+      <div class="algo-toggle">
+        <button class="algo-btn active-t" id="modeMin" data-mode="min">▼ TÌM MIN</button>
+        <button class="algo-btn" id="modeMax" data-mode="max">▲ TÌM MAX</button>
+      </div>
+      <div style="font-size:10px; color:var(--muted); font-family:var(--mono); margin-top:6px; line-height:1.5;">
+        <span style="color:var(--accent-t)">Min</span>: hàm lồi (convex) &nbsp;|&nbsp; <span style="color:var(--accent-g)">Max</span>: hàm lõm (concave)
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="section-label">Tham số tìm kiếm</div>
+      <div class="slider-row">
+        <div class="slider-head">
+          <span class="slider-name">Khoảng tìm: a</span>
+          <span class="slider-val" id="aOut">-3.0</span>
+        </div>
+        <input type="range" id="aSlider" min="-100" max="-0.5" step="0.5" value="-3">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head">
+          <span class="slider-name">Khoảng tìm: b</span>
+          <span class="slider-val" id="bOut">3.0</span>
+        </div>
+        <input type="range" id="bSlider" min="0.5" max="100" step="0.5" value="3">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head">
+          <span class="slider-name">Số bước tối đa</span>
+          <span class="slider-val" id="maxOut">50</span>
+        </div>
+        <input type="range" id="maxSlider" min="3" max="100" step="1" value="50">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Ngưỡng sai số ε (điều kiện dừng)</div>
+      <div class="eps-row">
+        <span class="fn-prefix">ε =</span>
+        <input type="text" class="eps-input" id="epsInput" value="1e-6">
+      </div>
+      <div class="eps-presets">
+        <button class="eps-preset" data-eps="1e-2">1e-2</button>
+        <button class="eps-preset" data-eps="1e-4">1e-4</button>
+        <button class="eps-preset active" data-eps="1e-6">1e-6</button>
+        <button class="eps-preset" data-eps="1e-8">1e-8</button>
+        <button class="eps-preset" data-eps="1e-10">1e-10</button>
+      </div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-row">
+        <div class="slider-head">
+          <span class="slider-name">Tốc độ animation (ms)</span>
+          <span class="slider-val" id="speedOut">300</span>
+        </div>
+        <input type="range" id="speedSlider" min="50" max="1000" step="10" value="300">
+      </div>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn btn-run" id="btnRun">▶ CHẠY</button>
+      <button class="btn btn-step" id="btnStep">→ BƯỚC TIẾP</button>
+      <button class="btn btn-reset" id="btnReset">↺ RESET</button>
+    </div>
+  </div>
+
+  <!-- CENTER: canvas -->
+  <div class="panel-center">
+    <div class="tab-bar">
+      <div class="tab active" data-tab="plot1d" id="tab1d">Đồ thị 1D (y=0)</div>
+      <div class="tab" data-tab="contour" id="tabContour">Contour 2D</div>
+      <div class="tab" data-tab="convergence" id="tabConv">Hội tụ</div>
+    </div>
+    <div class="canvas-area">
+      <canvas id="mainCanvas"></canvas>
+    </div>
+    <div class="progress-bar-wrap">
+      <span class="progress-label" id="progressLabel">Bước 0 / 0</span>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <span class="progress-label" id="progressEps">ε = —</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: stats & log -->
+  <div class="panel-right">
+    <div>
+      <div class="section-label">Trạng thái</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-name">BƯỚC</div>
+          <div class="stat-val blue" id="statStep">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-name">x* ước lượng</div>
+          <div class="stat-val amber" id="statX">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-name">f(x*)</div>
+          <div class="stat-val" id="statFx">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-name">|b − a|</div>
+          <div class="stat-val green" id="statWidth">—</div>
+        </div>
+        <div class="stat-card full">
+          <div class="stat-name">INTERVAL [a, b]</div>
+          <div class="stat-val" id="statInterval" style="font-size:12px">—</div>
+        </div>
+        <div class="stat-card full">
+          <div class="stat-name">ĐIỀU KIỆN DỪNG</div>
+          <div id="statStopReason" style="margin-top:4px">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="compareSection" style="display:none">
+      <div class="section-label">So sánh thuật toán</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Thuật toán</th>
+            <th>x*</th>
+            <th>Bước</th>
+            <th>ε cuối</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody"></tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="section-label">Lý thuyết</div>
+      <div style="font-size:11px; color: var(--muted); line-height:1.7; font-family: var(--mono);">
+        <div style="margin-bottom:8px">
+          <span style="color:var(--accent-t)">Tam phân:</span><br>
+          Mỗi bước loại ⅓ interval<br>
+          Tỉ lệ thu hẹp: 2/3 ≈ 0.667<br>
+          Eval/bước: 2
+        </div>
+        <div>
+          <span style="color:var(--accent-g)">Tỉ lệ vàng:</span><br>
+          φ = (√5−1)/2 ≈ 0.618<br>
+          Tỉ lệ thu hẹp: φ ≈ 0.618<br>
+          Eval/bước: 1 (tái dùng điểm)
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Log từng bước</div>
+      <div class="log-list" id="logList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// EXPRESSION PARSER — dùng math.js để parse biểu thức người dùng nhập
+// ============================================================
+function parseExpression(exprStr) {
+  // Trả về hàm f(x) hoặc ném lỗi nếu parse thất bại
+  const compiled = math.compile(exprStr);
+  return function(x) {
+    return compiled.evaluate({ x });
+  };
+}
+
+// ============================================================
+// CONVEXITY CHECKER — kiểm tra f''(x) > 0 bằng numerical 2nd derivative
+// Phương pháp: finite difference bậc 2
+//   f''(x) ≈ (f(x+h) - 2f(x) + f(x-h)) / h²
+// Chiến lược: lấy mẫu N điểm đều nhau trên [a, b]
+//   - Nếu tất cả f''(xi) > -TOL → lồi (convex)
+//   - Nếu một số âm → không lồi (non-convex)
+//   - Nếu có điểm NaN/Inf → cảnh báo (hàm không xác định)
+// ============================================================
+function checkConvexity(fn, a, b) {
+  const N = 200;
+  const h = 1e-5;
+  const TOL = 1e-4; // cho phép sai số nhỏ do floating-point
+  let minD2 = Infinity;
+  let nanCount = 0;
+  let negCount = 0;
+
+  for (let i = 0; i <= N; i++) {
+    const x = a + i / N * (b - a);
+    try {
+      const fx   = fn(x);
+      const fxph = fn(x + h);
+      const fxmh = fn(x - h);
+      const d2   = (fxph - 2 * fx + fxmh) / (h * h);
+
+      if (!isFinite(d2) || isNaN(d2)) { nanCount++; continue; }
+      if (d2 < minD2) minD2 = d2;
+      if (d2 < -TOL) negCount++;
+    } catch(e) {
+      nanCount++;
+    }
+  }
+
+  if (nanCount > N * 0.2) {
+    return { convex: false, status: 'warning', message: `Hàm không xác định tại ${nanCount} điểm trong [a,b]` };
+  }
+  if (negCount > 0) {
+    return { convex: false, status: 'nonconvex', message: `Không lồi: f''(x) < 0 tại ${negCount} điểm (min f'' ≈ ${minD2.toFixed(4)})` };
+  }
+  return { convex: true, status: 'convex', message: `Lồi ✓  min f''(x) ≈ ${minD2.toFixed(4)} ≥ 0 trên [${a}, ${b}]` };
+}
+
+// ============================================================
+// CORE: Ternary Search với điều kiện dừng epsilon
+// Dừng khi |b - a| < eps HOẶC đạt maxSteps
+// ============================================================
+function ternarySearch(fn, a, b, maxSteps, eps) {
+  const steps = [];
+  const findMax = state.mode === 'max';
+  for (let i = 0; i < maxSteps; i++) {
+    const width = b - a;
+    if (width < eps) {
+      if (steps.length > 0) steps[steps.length - 1].stopReason = 'eps';
+      break;
+    }
+    const m1  = a + width / 3;
+    const m2  = b - width / 3;
+    const fm1 = fn(m1);
+    const fm2 = fn(m2);
+    const step = {
+      step: i + 1, a, b, m1, m2, fm1, fm2,
+      type: 'ternary',
+      est: (a + b) / 2,
+      width,
+      stopReason: null,
+    };
+    steps.push(step);
+    // findMax: giữ nửa có giá trị lớn hơn
+    if (findMax ? fm1 > fm2 : fm1 < fm2) b = m2; else a = m1;
+  }
+  if (steps.length > 0 && !steps[steps.length - 1].stopReason) {
+    steps[steps.length - 1].stopReason = 'maxsteps';
+  }
+  return steps;
+}
+
+// ============================================================
+// CORE: Golden Section Search với điều kiện dừng epsilon
+// ============================================================
+const PHI = (Math.sqrt(5) - 1) / 2; // ≈ 0.61803
+
+function goldenSectionSearch(fn, a, b, maxSteps, eps) {
+  const steps = [];
+  const findMax = state.mode === 'max';
+  let m1  = b - PHI * (b - a);
+  let m2  = a + PHI * (b - a);
+  let fm1 = fn(m1);
+  let fm2 = fn(m2);
+
+  for (let i = 0; i < maxSteps; i++) {
+    const width = b - a;
+    if (width < eps) {
+      if (steps.length > 0) steps[steps.length - 1].stopReason = 'eps';
+      break;
+    }
+    const step = {
+      step: i + 1, a, b, m1, m2, fm1, fm2,
+      type: 'golden',
+      est: (a + b) / 2,
+      width,
+      stopReason: null,
+    };
+    steps.push(step);
+    if (findMax ? fm1 > fm2 : fm1 < fm2) {
+      b = m2; m2 = m1; fm2 = fm1;
+      m1  = b - PHI * (b - a);
+      fm1 = fn(m1);
+    } else {
+      a = m1; m1 = m2; fm1 = fm2;
+      m2  = a + PHI * (b - a);
+      fm2 = fn(m2);
+    }
+  }
+  if (steps.length > 0 && !steps[steps.length - 1].stopReason) {
+    steps[steps.length - 1].stopReason = 'maxsteps';
+  }
+  return steps;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  expr: 'x^2 + 2*x + 1',
+  fn: null,            // hàm hiện tại (được compile từ expr)
+  convexResult: null,
+  algo: 'ternary',
+  mode: 'min',         // 'min' hoặc 'max'
+  a: -3, b: 3,
+  maxSteps: 50,
+  eps: 1e-6,
+  speed: 300,
+  steps: [],
+  stepsT: [],
+  stepsG: [],
+  currentStep: 0,
+  animTimer: null,
+  tab: 'plot1d',
+};
+
+// ============================================================
+// EXPRESSION + CONVEXITY LOGIC
+// ============================================================
+function applyFunction(exprStr, silent) {
+  const input = document.getElementById('fnCustomInput');
+  const badge = document.getElementById('convexBadge');
+  const badgeText = document.getElementById('convexText');
+
+  // Reset badge
+  badge.className = 'convex-badge checking';
+  badgeText.textContent = 'Đang kiểm tra...';
+
+  let fn;
+  try {
+    fn = parseExpression(exprStr);
+    // Test với một giá trị để chắc chắn không lỗi
+    const testVal = fn(0);
+    if (isNaN(testVal) && !isFinite(testVal)) throw new Error('Hàm trả về NaN tại x=0');
+    input.className = 'fn-text-input ok';
+  } catch (e) {
+    input.className = 'fn-text-input error';
+    badge.className = 'convex-badge nonconvex';
+    badgeText.textContent = 'Lỗi cú pháp: ' + e.message;
+    return false;
+  }
+
+  // Kiểm tra tính lồi/lõm trên đoạn [a, b]
+  const result = checkConvexity(fn, state.a, state.b);
+  state.fn = fn;
+  state.expr = exprStr;
+  state.convexResult = result;
+
+  // Nếu mode là max (tìm cực đại), đảo ngược cảnh báo lồi/lõm
+  if (state.mode === 'max') {
+    // Với hàm lõm (concave), f'' < 0 — đây là điều kiện đúng để tìm max
+    if (result.status === 'nonconvex') {
+      badge.className = 'convex-badge convex';
+      badgeText.textContent = '▲ Hàm lõm (concave) — phù hợp tìm MAX ✓';
+    } else if (result.status === 'convex') {
+      badge.className = 'convex-badge warning';
+      badgeText.textContent = '⚠ Hàm lồi — tìm MAX có thể không đúng';
+    } else {
+      badge.className = 'convex-badge ' + result.status;
+      badgeText.textContent = result.message;
+    }
+  } else {
+    badge.className = 'convex-badge ' + result.status;
+    badgeText.textContent = result.message;
+  }
+
+  if (!silent) reset();
+  return result.convex;
+}
+
+// ============================================================
+// DRAWING
+// ============================================================
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const area = canvas.parentElement;
+  canvas.width  = Math.max(300, area.clientWidth - 40);
+  canvas.height = Math.max(200, area.clientHeight - 40);
+}
+
+const C = {
+  bg: '#0d0f12', surface2: '#1c2130',
+  grid: 'rgba(255,255,255,0.05)', axis: 'rgba(255,255,255,0.2)',
+  text: '#6b7280', curve: '#3b82f6', curveG: '#10b981',
+  interval: 'rgba(59,130,246,0.12)', intervalG: 'rgba(16,185,129,0.10)',
+  m1: '#ef4444', m2: '#10b981', est: '#f59e0b',
+};
+
+function drawPlot1D() {
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 42, right: 32, bottom: 48, left: 64 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  if (!state.fn) {
+    ctx.fillStyle = C.text; ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('Nhập hàm và nhấn Áp dụng', W/2, H/2);
+    return;
+  }
+
+  const fn = state.fn;
+
+  // Xác định viewport x: nếu đang có bước hiện tại → zoom vào [a_cur, b_cur]
+  const stepsToRender = getStepsToRender();
+  let viewA = state.a, viewB = state.b;
+  if (stepsToRender.length > 0) {
+    // Lấy interval của bước hiện tại (nếu có nhiều algo, lấy interval rộng nhất)
+    let minA = Infinity, maxB = -Infinity;
+    for (const { s } of stepsToRender) {
+      if (s.a < minA) minA = s.a;
+      if (s.b > maxB) maxB = s.b;
+    }
+    viewA = minA; viewB = maxB;
+  }
+  // Thêm margin xung quanh interval hiện tại để dễ nhìn
+  const viewRange = viewB - viewA;
+  const margin = Math.max(viewRange * 0.35, 0.5);
+  const xMin = viewA - margin;
+  const xMax = viewB + margin;
+
+  const N = 400;
+  const ys = [];
+  for (let i = 0; i <= N; i++) {
+    const v = fn(xMin + i/N*(xMax-xMin));
+    ys.push(isFinite(v) ? v : null);
+  }
+  const validYs = ys.filter(v => v !== null);
+  if (!validYs.length) return;
+  const yMinData = Math.min(...validYs);
+  const yMaxData = Math.max(...validYs);
+  const yPad = Math.max((yMaxData - yMinData) * 0.15, 0.5);
+  const yMin = yMinData - yPad;
+  const yMax = yMaxData + yPad;
+
+  function cx(x) { return pad.left + (x - xMin) / (xMax - xMin) * pw; }
+  function cy(y) { return pad.top + ph - (y - yMin) / (yMax - yMin) * ph; }
+
+  // Zoom indicator label ở trên
+  if (stepsToRender.length > 0) {
+    ctx.fillStyle = 'rgba(59,130,246,0.7)';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'center';
+    const s = stepsToRender[0].s;
+    ctx.fillText(`🔍 Zoom: [${s.a.toFixed(4)}, ${s.b.toFixed(4)}]  |b−a| = ${s.width.toExponential(2)}`, W/2, 16);
+  }
+
+  // Grid
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 8; i++) {
+    const x = pad.left + pw*i/8;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+ph); ctx.stroke();
+    const y = pad.top + ph*i/8;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+pw, y); ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
+  const ay = cy(0);
+  if (ay > pad.top && ay < pad.top+ph) { ctx.beginPath(); ctx.moveTo(pad.left, ay); ctx.lineTo(pad.left+pw, ay); ctx.stroke(); }
+  const ax = cx(0);
+  if (ax > pad.left && ax < pad.left+pw) { ctx.beginPath(); ctx.moveTo(ax, pad.top); ctx.lineTo(ax, pad.top+ph); ctx.stroke(); }
+
+  // Tick labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 8; i++) {
+    ctx.fillText((xMin + (xMax-xMin)*i/8).toFixed(2), pad.left + pw*i/8, pad.top+ph+18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    ctx.fillText((yMin + (yMax-yMin)*i/5).toFixed(2), pad.left-8, cy(yMin + (yMax-yMin)*i/5)+4);
+  }
+
+  // Interval shading from current step
+  for (const { s, intColor } of stepsToRender) {
+    ctx.fillStyle = intColor;
+    ctx.fillRect(cx(s.a), pad.top, cx(s.b)-cx(s.a), ph);
+    ctx.strokeStyle = intColor.includes('59,130') ? C.curve : C.curveG;
+    ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(cx(s.a), pad.top); ctx.lineTo(cx(s.a), pad.top+ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx(s.b), pad.top); ctx.lineTo(cx(s.b), pad.top+ph); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Curve
+  ctx.strokeStyle = C.curve; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  let penDown = false;
+  for (let i = 0; i <= N; i++) {
+    const x = xMin + i/N*(xMax-xMin);
+    const y = ys[i];
+    if (y === null || !isFinite(y)) { penDown = false; continue; }
+    const px2 = cx(x), py2 = cy(y);
+    if (!penDown) { ctx.moveTo(px2, py2); penDown = true; } else ctx.lineTo(px2, py2);
+  }
+  ctx.stroke();
+
+  // Non-convex / non-concave warning overlay
+  const isBadMode = state.mode === 'min'
+    ? (state.convexResult && !state.convexResult.convex && state.convexResult.status === 'nonconvex')
+    : (state.convexResult && state.convexResult.convex && state.convexResult.status === 'convex');
+  if (isBadMode) {
+    ctx.fillStyle = 'rgba(239,68,68,0.05)';
+    ctx.fillRect(pad.left, pad.top, pw, ph);
+    ctx.strokeStyle = 'rgba(239,68,68,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([6,4]);
+    ctx.strokeRect(pad.left, pad.top, pw, ph);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(239,68,68,0.7)'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(state.mode === 'min' ? '⚠ Hàm không lồi — tìm MIN có thể sai' : '⚠ Hàm lồi — tìm MAX có thể sai', W/2, pad.top+20);
+  }
+
+  // Probe dots
+  function drawDot(xv, col, label) {
+    const yv = fn(xv);
+    if (!isFinite(yv)) return;
+    const dcx = cx(xv), dcy = cy(yv);
+    ctx.beginPath(); ctx.arc(dcx, dcy, 5, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = col; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(label, dcx, dcy - 12);
+  }
+  for (const { s } of stepsToRender) {
+    drawDot(s.m1, C.m1, 'm₁');
+    drawDot(s.m2, C.m2, 'm₂');
+    const estX = (s.a + s.b) / 2;
+    ctx.strokeStyle = C.est; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx(estX), pad.top+10); ctx.lineTo(cx(estX), pad.top+ph); ctx.stroke();
+    ctx.fillStyle = C.est; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(state.mode === 'max' ? 'x*max' : 'x*', cx(estX), pad.top+8);
+
+    // Epsilon band indicator
+    const halfEps = state.eps / 2;
+    const ex1 = cx(estX - halfEps), ex2 = cx(estX + halfEps);
+    if (ex2 - ex1 > 1) {
+      ctx.fillStyle = 'rgba(245,158,11,0.2)';
+      ctx.fillRect(ex1, pad.top, ex2-ex1, ph);
+    }
+  }
+
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('x', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('f(x)', 0, 0); ctx.restore();
+}
+
+function drawContour() {
+  // Vẽ contour của f(x, y) = f(x) + f(y) như proxy hàm 2D tách biến
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 32, right: 32, bottom: 48, left: 64 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  if (!state.fn) { ctx.fillStyle = C.text; ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'center'; ctx.fillText('Nhập hàm và nhấn Áp dụng', W/2, H/2); return; }
+
+  const fn = state.fn;
+  const range = Math.max(Math.abs(state.a), Math.abs(state.b)) + 1;
+  const xMin = -range, xMax = range, yMin2 = -range, yMax2 = range;
+  const RES = 80;
+  const imgData = ctx.createImageData(pw, ph);
+  let fMin = Infinity, fMax = -Infinity;
+  const vals = new Float32Array(RES*RES);
+  for (let yi = 0; yi < RES; yi++) {
+    for (let xi = 0; xi < RES; xi++) {
+      const x = xMin + xi/RES*(xMax-xMin);
+      const y = yMin2 + yi/RES*(yMax2-yMin2);
+      try {
+        const v = fn(x) + fn(y); // f(x,y) proxy = f(x)+f(y)
+        vals[yi*RES+xi] = isFinite(v) ? v : 0;
+        if (isFinite(v)) { if (v < fMin) fMin = v; if (v > fMax) fMax = v; }
+      } catch(e) { vals[yi*RES+xi] = 0; }
+    }
+  }
+  for (let py2 = 0; py2 < ph; py2++) {
+    for (let px2 = 0; px2 < pw; px2++) {
+      const xi = Math.floor(px2/pw*RES);
+      const yi = Math.floor(py2/ph*RES);
+      const t = Math.pow((vals[yi*RES+xi] - fMin) / (fMax - fMin + 1e-9), 0.4);
+      const idx = (py2*pw + px2)*4;
+      imgData.data[idx]   = Math.round(13 + t*30);
+      imgData.data[idx+1] = Math.round(23 + t*60);
+      imgData.data[idx+2] = Math.round(48 + t*120);
+      imgData.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, pad.left, pad.top);
+
+  function cxc(x) { return pad.left + (x-xMin)/(xMax-xMin)*pw; }
+  function cyc(y) { return pad.top + (1-(y-yMin2)/(yMax2-yMin2))*ph; }
+
+  ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cxc(xMin), cyc(0)); ctx.lineTo(cxc(xMax), cyc(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cxc(0), cyc(yMin2)); ctx.lineTo(cxc(0), cyc(yMax2)); ctx.stroke();
+
+  if (state.currentStep > 0 && state.steps[state.currentStep-1]) {
+    const s = state.steps[state.currentStep-1];
+    const iy = cyc(0);
+    ctx.fillStyle = 'rgba(59,130,246,0.3)';
+    ctx.fillRect(cxc(s.a), iy-6, cxc(s.b)-cxc(s.a), 12);
+    ctx.fillStyle = C.m1; ctx.beginPath(); ctx.arc(cxc(s.m1), iy, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = C.m2; ctx.beginPath(); ctx.arc(cxc(s.m2), iy, 5, 0, Math.PI*2); ctx.fill();
+  }
+
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('x', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('y', 0, 0); ctx.restore();
+}
+
+function drawConvergence() {
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 32, right: 32, bottom: 48, left: 70 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+
+  const datasets = [];
+  if (state.stepsT.length) datasets.push({ steps: state.stepsT, color: C.curve, label: 'Ternary' });
+  if (state.stepsG.length) datasets.push({ steps: state.stepsG, color: C.curveG, label: 'Golden' });
+  if (!datasets.length) {
+    ctx.fillStyle = C.text; ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('Nhấn Chạy để xem đồ thị hội tụ', W/2, H/2); return;
+  }
+
+  const allWidths = datasets.flatMap(d => d.steps.map(s => s.width));
+  const wMax = Math.max(...allWidths);
+  const wMin = Math.min(...allWidths, state.eps);
+  const nMax = Math.max(...datasets.map(d => d.steps.length));
+
+  function cx2(i) { return pad.left + (nMax > 0 ? i/nMax : 0)*pw; }
+  function cy2(w) {
+    const logW = Math.log10(Math.max(w, 1e-15));
+    const logMax = Math.log10(wMax + 0.01);
+    const logMin = Math.log10(Math.max(wMin, 1e-15));
+    if (logMax === logMin) return pad.top + ph/2;
+    return pad.top + ph - (logW - logMin)/(logMax - logMin)*ph;
+  }
+
+  // Grid
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 8; i++) {
+    const x = pad.left + pw*i/8; ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+ph); ctx.stroke();
+    const y = pad.top + ph*i/8; ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+pw, y); ctx.stroke();
+  }
+
+  // Epsilon threshold line
+  const epsY = cy2(state.eps);
+  if (epsY > pad.top && epsY < pad.top + ph) {
+    ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.left, epsY); ctx.lineTo(pad.left+pw, epsY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f59e0b'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText('ε = ' + state.eps.toExponential(0), pad.left+4, epsY-4);
+  }
+
+  // Curves
+  for (const { steps, color } of datasets) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath();
+    steps.forEach((s, i) => { i === 0 ? ctx.moveTo(cx2(i+1), cy2(s.width)) : ctx.lineTo(cx2(i+1), cy2(s.width)); });
+    ctx.stroke();
+    if (state.currentStep > 0 && steps[state.currentStep-1]) {
+      const s = steps[state.currentStep-1];
+      ctx.beginPath(); ctx.arc(cx2(state.currentStep), cy2(s.width), 5, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+    }
+  }
+
+  // Labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  for (let i = 0; i <= nMax; i += Math.max(1, Math.ceil(nMax/6))) ctx.fillText(i, cx2(i), pad.top+ph+16);
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const logMax = Math.log10(wMax+0.01), logMin = Math.log10(Math.max(wMin,1e-15));
+    const logV = logMax - (logMax-logMin)*i/5;
+    ctx.fillText(Math.pow(10, logV).toExponential(1), pad.left-5, pad.top + ph*i/5 + 4);
+  }
+
+  // Legend
+  const lx = pad.left + pw - 120;
+  datasets.forEach(({ color, label }, i) => {
+    ctx.fillStyle = color; ctx.fillRect(lx, pad.top+16+i*20, 14, 3);
+    ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left'; ctx.fillText(label, lx+20, pad.top+20+i*20);
+  });
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('Bước', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('|b−a| (log)', 0, 0); ctx.restore();
+}
+
+function getStepsToRender() {
+  if (state.currentStep === 0) return [];
+  if (state.algo === 'both') {
+    const res = [];
+    if (state.stepsT[state.currentStep-1]) res.push({ s: state.stepsT[state.currentStep-1], intColor: C.interval });
+    if (state.stepsG[state.currentStep-1]) res.push({ s: state.stepsG[state.currentStep-1], intColor: C.intervalG });
+    return res;
+  }
+  const s = state.steps[state.currentStep-1];
+  if (!s) return [];
+  return [{ s, intColor: s.type === 'ternary' ? C.interval : C.intervalG }];
+}
+
+function draw() {
+  resizeCanvas();
+  if (state.tab === 'plot1d') drawPlot1D();
+  else if (state.tab === 'contour') drawContour();
+  else drawConvergence();
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function updateStats() {
+  const total = state.steps.length;
+  const cur = state.currentStep;
+  document.getElementById('progressLabel').textContent = `Bước ${cur} / ${total}`;
+  document.getElementById('progressFill').style.width = total ? (cur/total*100)+'%' : '0%';
+
+  if (cur === 0 || !state.steps[cur-1]) {
+    ['statStep','statX','statFx','statWidth','statInterval'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('statStopReason').innerHTML = '—';
+    document.getElementById('progressEps').textContent = 'ε = —';
+    return;
+  }
+
+  const s = state.steps[cur-1];
+  document.getElementById('statStep').textContent = s.step;
+  document.getElementById('statX').textContent = s.est.toFixed(6);
+  document.getElementById('statFx').textContent = isFinite(state.fn(s.est)) ? state.fn(s.est).toFixed(6) : 'N/A';
+  document.getElementById('statWidth').textContent = s.width.toExponential(4);
+  document.getElementById('statInterval').textContent = `[${s.a.toFixed(5)}, ${s.b.toFixed(5)}]`;
+  document.getElementById('progressEps').textContent = `|b-a| = ${s.width.toExponential(2)}`;
+
+  // Stop reason — chỉ hiện ở bước cuối
+  const isLast = cur === total;
+  if (isLast && s.stopReason) {
+    const html = s.stopReason === 'eps'
+      ? `<span class="stop-reason stop-eps">✓ Dừng: |b−a| = ${s.width.toExponential(2)} &lt; ε = ${state.eps.toExponential(0)}</span>`
+      : `<span class="stop-reason stop-steps">Dừng: đạt ${state.maxSteps} bước tối đa</span>`;
+    document.getElementById('statStopReason').innerHTML = html;
+  } else {
+    document.getElementById('statStopReason').innerHTML = s.width < state.eps
+      ? `<span class="stop-reason stop-eps">Đang hội tụ…</span>` : '—';
+  }
+}
+
+function addLog(s) {
+  const log = document.getElementById('logList');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + (s.type === 'ternary' ? 'highlight-t' : 'highlight-g');
+  const stopTag = s.stopReason === 'eps' ? ' <span style="color:#10b981">[ε-stop]</span>' : s.stopReason === 'maxsteps' ? ' <span style="color:#f59e0b">[max-stop]</span>' : '';
+  div.innerHTML =
+    `<span class="log-step">#${s.step}</span> ` +
+    `[${s.a.toFixed(3)}, ${s.b.toFixed(3)}] ` +
+    `m₁=<span class="log-red">${s.m1.toFixed(4)}</span> ` +
+    `m₂=<span class="log-green">${s.m2.toFixed(4)}</span> ` +
+    `|b-a|=<span class="log-amber">${s.width.toExponential(2)}</span>${stopTag}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateCompare() {
+  const sec = document.getElementById('compareSection');
+  if (state.algo !== 'both') { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const tbody = document.getElementById('compareBody');
+  tbody.innerHTML = '';
+  const datasets = [
+    { steps: state.stepsT, label: 'Ternary', cls: 'badge-t' },
+    { steps: state.stepsG, label: 'Golden',  cls: 'badge-g' },
+  ];
+  for (const { steps, label, cls } of datasets) {
+    if (!steps.length) continue;
+    const last = steps[steps.length-1];
+    const stopTag = last.stopReason === 'eps'
+      ? `<span class="stop-reason stop-eps">ε</span>`
+      : `<span class="stop-reason stop-steps">max</span>`;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="badge ${cls}">${label}</span></td>
+      <td>${last.est.toFixed(5)}</td>
+      <td>${steps.length} ${stopTag}</td>
+      <td>${last.width.toExponential(2)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function resetUI() {
+  document.getElementById('logList').innerHTML = '';
+  updateStats(); updateCompare(); draw();
+}
+
+// ============================================================
+// ALGORITHM RUNNER
+// ============================================================
+function buildAllSteps() {
+  if (!state.fn) return;
+  const fn = state.fn;
+  if (state.algo === 'ternary') {
+    state.steps  = ternarySearch(fn, state.a, state.b, state.maxSteps, state.eps);
+    state.stepsT = state.steps;
+    state.stepsG = [];
+  } else if (state.algo === 'golden') {
+    state.steps  = goldenSectionSearch(fn, state.a, state.b, state.maxSteps, state.eps);
+    state.stepsT = [];
+    state.stepsG = state.steps;
+  } else {
+    state.stepsT = ternarySearch(fn, state.a, state.b, state.maxSteps, state.eps);
+    state.stepsG = goldenSectionSearch(fn, state.a, state.b, state.maxSteps, state.eps);
+    state.steps  = state.stepsT;
+  }
+}
+
+// ============================================================
+// ANIMATION
+// ============================================================
+function stopAnim() {
+  if (state.animTimer) { clearInterval(state.animTimer); state.animTimer = null; }
+  document.getElementById('btnRun').textContent = '▶ CHẠY';
+  document.getElementById('btnRun').classList.remove('running');
+}
+
+function startAnim() {
+  if (!state.fn) { alert('Vui lòng nhập hàm và nhấn Áp dụng trước.'); return; }
+  stopAnim();
+  buildAllSteps();
+  state.currentStep = 0;
+  document.getElementById('logList').innerHTML = '';
+  document.getElementById('btnRun').textContent = '■ STOP';
+  document.getElementById('btnRun').classList.add('running');
+  updateCompare();
+
+  state.animTimer = setInterval(() => {
+    if (state.currentStep >= state.steps.length) { stopAnim(); return; }
+    if (state.algo === 'both') {
+      if (state.stepsT[state.currentStep]) addLog(state.stepsT[state.currentStep]);
+      if (state.stepsG[state.currentStep]) addLog(state.stepsG[state.currentStep]);
+    } else {
+      addLog(state.steps[state.currentStep]);
+    }
+    state.currentStep++;
+    updateStats(); draw();
+  }, state.speed);
+}
+
+function stepOnce() {
+  if (!state.fn) { alert('Vui lòng nhập hàm và nhấn Áp dụng trước.'); return; }
+  if (!state.steps.length) {
+    buildAllSteps(); state.currentStep = 0;
+    document.getElementById('logList').innerHTML = '';
+    updateCompare();
+  }
+  if (state.currentStep >= state.steps.length) return;
+  if (state.algo === 'both') {
+    if (state.stepsT[state.currentStep]) addLog(state.stepsT[state.currentStep]);
+    if (state.stepsG[state.currentStep]) addLog(state.stepsG[state.currentStep]);
+  } else {
+    addLog(state.steps[state.currentStep]);
+  }
+  state.currentStep++; updateStats(); draw();
+}
+
+function reset() {
+  stopAnim();
+  state.steps = []; state.stepsT = []; state.stepsG = [];
+  state.currentStep = 0;
+  resetUI();
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+// Mode buttons (min/max)
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('[data-mode]').forEach(b => { b.classList.remove('active-t'); b.classList.remove('active-g'); });
+    state.mode = this.dataset.mode;
+    if (state.mode === 'min') this.classList.add('active-t');
+    else this.classList.add('active-g');
+    if (state.fn) applyFunction(state.expr, false);
+    else reset();
+  });
+});
+
+// Apply function button
+document.getElementById('btnApplyFn').addEventListener('click', () => {
+  const expr = document.getElementById('fnCustomInput').value.trim();
+  if (expr) applyFunction(expr, false);
+});
+document.getElementById('fnCustomInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btnApplyFn').click();
+});
+
+// Preset function buttons
+document.querySelectorAll('.fn-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.fn-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const expr = this.dataset.expr;
+    document.getElementById('fnCustomInput').value = expr;
+    applyFunction(expr, false);
+  });
+});
+
+// Algo buttons
+document.querySelectorAll('.algo-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.algo-btn').forEach(b => { b.classList.remove('active-t'); b.classList.remove('active-g'); });
+    state.algo = this.dataset.algo;
+    if (state.algo === 'ternary') this.classList.add('active-t');
+    else if (state.algo === 'golden') this.classList.add('active-g');
+    else this.classList.add('active-t');
+    reset();
+  });
+});
+
+// Sliders
+document.getElementById('aSlider').addEventListener('input', function() {
+  state.a = +this.value;
+  document.getElementById('aOut').textContent = (+this.value).toFixed(1);
+  if (state.fn) applyFunction(state.expr, true); // re-check convexity on new interval
+  reset();
+});
+document.getElementById('bSlider').addEventListener('input', function() {
+  state.b = +this.value;
+  document.getElementById('bOut').textContent = (+this.value).toFixed(1);
+  if (state.fn) applyFunction(state.expr, true);
+  reset();
+});
+document.getElementById('maxSlider').addEventListener('input', function() {
+  state.maxSteps = +this.value;
+  document.getElementById('maxOut').textContent = this.value;
+  reset();
+});
+document.getElementById('speedSlider').addEventListener('input', function() {
+  state.speed = +this.value;
+  document.getElementById('speedOut').textContent = this.value;
+});
+
+// Epsilon input
+document.getElementById('epsInput').addEventListener('change', function() {
+  const v = parseFloat(this.value);
+  if (isFinite(v) && v > 0) {
+    state.eps = v;
+    document.querySelectorAll('.eps-preset').forEach(b => {
+      b.classList.toggle('active', parseFloat(b.dataset.eps) === v);
+    });
+    reset();
+  }
+});
+document.querySelectorAll('.eps-preset').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.eps-preset').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    state.eps = parseFloat(this.dataset.eps);
+    document.getElementById('epsInput').value = this.dataset.eps;
+    reset();
+  });
+});
+
+// Run / Step / Reset
+document.getElementById('btnRun').addEventListener('click', () => {
+  if (state.animTimer) stopAnim(); else startAnim();
+});
+document.getElementById('btnStep').addEventListener('click', stepOnce);
+document.getElementById('btnReset').addEventListener('click', reset);
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    state.tab = this.dataset.tab;
+    draw();
+  });
+});
+
+window.addEventListener('resize', draw);
+
+// ============================================================
+// INIT — load hàm mặc định
+// ============================================================
+applyFunction('x^2 + 2*x + 1', true);
+draw();
+</script>
+
+<!-- // Slice 1D: tìm kiếm trên trục x với y=0
+function slice1D(fn, x) { return fn(x, 0); }
+
+// ============================================================
+// CORE: Ternary Search — tìm min hàm lồi trên [a, b]
+// Mỗi bước: chia đoạn thành 3 phần, loại 1/3 xa cực tiểu
+// ============================================================
+function ternarySearch(fn, a, b, maxSteps) {
+  const steps = [];
+  for (let i = 0; i < maxSteps; i++) {
+    const m1 = a + (b - a) / 3;
+    const m2 = b - (b - a) / 3;
+    const fm1 = slice1D(fn, m1);
+    const fm2 = slice1D(fn, m2);
+    steps.push({
+      step: i + 1, a, b, m1, m2, fm1, fm2,
+      type: 'ternary',
+      est: (a + b) / 2,
+      width: b - a,
+      reduction: 2/3,
+    });
+    // Loại đoạn có giá trị lớn hơn
+    if (fm1 < fm2) b = m2; else a = m1;
+  }
+  return steps;
+}
+
+// ============================================================
+// CORE: Golden Section Search — dùng tỉ lệ vàng φ
+// Ưu điểm: tái sử dụng một điểm đánh giá mỗi bước → chỉ 1 eval/bước
+// ============================================================
+const PHI = (Math.sqrt(5) - 1) / 2; // ≈ 0.61803
+
+function goldenSectionSearch(fn, a, b, maxSteps) {
+  const steps = [];
+  let m1 = b - PHI * (b - a);
+  let m2 = a + PHI * (b - a);
+  let fm1 = slice1D(fn, m1);
+  let fm2 = slice1D(fn, m2);
+
+  for (let i = 0; i < maxSteps; i++) {
+    steps.push({
+      step: i + 1, a, b, m1, m2, fm1, fm2,
+      type: 'golden',
+      est: (a + b) / 2,
+      width: b - a,
+      reduction: PHI,
+    });
+    if (fm1 < fm2) {
+      b = m2; m2 = m1; fm2 = fm1;
+      m1 = b - PHI * (b - a);
+      fm1 = slice1D(fn, m1);
+    } else {
+      a = m1; m1 = m2; fm1 = fm2;
+      m2 = a + PHI * (b - a);
+      fm2 = slice1D(fn, m2);
+    }
+  }
+  return steps;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  fnKey: 'bowl',
+  algo: 'ternary',
+  a: -3, b: 3,
+  maxSteps: 18,
+  speed: 350,
+  steps: [],           // steps của algo chính
+  stepsT: [],          // ternary steps (cho mode both)
+  stepsG: [],          // golden steps  (cho mode both)
+  currentStep: 0,
+  animTimer: null,
+  tab: 'plot1d',
+};
+
+function getFn() { return FUNCTIONS[state.fnKey].f; }
+
+function buildAllSteps() {
+  const fn = getFn();
+  if (state.algo === 'ternary') {
+    state.steps = ternarySearch(fn, state.a, state.b, state.maxSteps);
+    state.stepsT = state.steps;
+    state.stepsG = [];
+  } else if (state.algo === 'golden') {
+    state.steps = goldenSectionSearch(fn, state.a, state.b, state.maxSteps);
+    state.stepsT = [];
+    state.stepsG = state.steps;
+  } else { // both
+    state.stepsT = ternarySearch(fn, state.a, state.b, state.maxSteps);
+    state.stepsG = goldenSectionSearch(fn, state.a, state.b, state.maxSteps);
+    state.steps = state.stepsT; // primary display
+  }
+}
+
+// ============================================================
+// DRAWING
+// ============================================================
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const area = canvas.parentElement;
+  const w = area.clientWidth - 40;
+  const h = area.clientHeight - 40;
+  canvas.width = Math.max(300, w);
+  canvas.height = Math.max(200, h);
+}
+
+const C = {
+  bg: '#0d0f12',
+  surface: '#141720',
+  surface2: '#1c2130',
+  grid: 'rgba(255,255,255,0.05)',
+  axis: 'rgba(255,255,255,0.2)',
+  text: '#6b7280',
+  curve: '#3b82f6',
+  curveG: '#10b981',
+  interval: 'rgba(59,130,246,0.12)',
+  intervalG: 'rgba(16,185,129,0.10)',
+  m1: '#ef4444',
+  m2: '#10b981',
+  est: '#f59e0b',
+  true_min: 'rgba(245,158,11,0.5)',
+};
+
+function drawPlot1D() {
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 32, right: 32, bottom: 48, left: 64 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const fn = getFn();
+  const xMin = state.a - 1.2, xMax = state.b + 1.2;
+  const N = 400;
+  const ys = [];
+  for (let i = 0; i <= N; i++) ys.push(slice1D(fn, xMin + i/N*(xMax-xMin)));
+  const yMin = Math.min(...ys) - 0.1;
+  const yMax = Math.max(...ys) + (Math.max(...ys) - Math.min(...ys)) * 0.1 + 0.1;
+
+  function cx(x) { return pad.left + (x - xMin) / (xMax - xMin) * pw; }
+  function cy(y) { return pad.top + ph - (y - yMin) / (yMax - yMin) * ph; }
+
+  // Grid
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 8; i++) {
+    const x = pad.left + pw*i/8;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+ph); ctx.stroke();
+    const y = pad.top + ph*i/8;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+pw, y); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
+  const ay = cy(0);
+  if (ay > pad.top && ay < pad.top+ph) {
+    ctx.beginPath(); ctx.moveTo(pad.left, ay); ctx.lineTo(pad.left+pw, ay); ctx.stroke();
+  }
+  const ax = cx(0);
+  if (ax > pad.left && ax < pad.left+pw) {
+    ctx.beginPath(); ctx.moveTo(ax, pad.top); ctx.lineTo(ax, pad.top+ph); ctx.stroke();
+  }
+
+  // Tick labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i <= 8; i++) {
+    const xv = xMin + (xMax-xMin)*i/8;
+    ctx.fillText(xv.toFixed(1), pad.left + pw*i/8, pad.top+ph+18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const yv = yMin + (yMax-yMin)*i/5;
+    ctx.fillText(yv.toFixed(1), pad.left-8, cy(yv)+4);
+  }
+
+  // True minimum vertical line
+  const trueMin = FUNCTIONS[state.fnKey].min;
+  const txc = cx(trueMin.x);
+  ctx.strokeStyle = C.true_min; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(txc, pad.top); ctx.lineTo(txc, pad.top+ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = C.est; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('true', txc, pad.top+12);
+
+  // Draw algo steps
+  const stepsToRender = [];
+  if (state.algo === 'both' && state.currentStep > 0) {
+    if (state.stepsT[state.currentStep-1]) stepsToRender.push({s: state.stepsT[state.currentStep-1], color: C.curve, intColor: C.interval });
+    if (state.stepsG[state.currentStep-1]) stepsToRender.push({s: state.stepsG[state.currentStep-1], color: C.curveG, intColor: C.intervalG });
+  } else if (state.currentStep > 0 && state.steps[state.currentStep-1]) {
+    const s = state.steps[state.currentStep-1];
+    const col = s.type === 'ternary' ? C.curve : C.curveG;
+    stepsToRender.push({ s, color: col, intColor: s.type === 'ternary' ? C.interval : C.intervalG });
+  }
+
+  for (const { s, color, intColor } of stepsToRender) {
+    // Interval highlight
+    ctx.fillStyle = intColor;
+    ctx.fillRect(cx(s.a), pad.top, cx(s.b)-cx(s.a), ph);
+
+    // Interval borders
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(cx(s.a), pad.top); ctx.lineTo(cx(s.a), pad.top+ph); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx(s.b), pad.top); ctx.lineTo(cx(s.b), pad.top+ph); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Curve
+  ctx.strokeStyle = C.curve; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const x = xMin + i/N*(xMax-xMin);
+    const y = slice1D(fn, x);
+    i === 0 ? ctx.moveTo(cx(x), cy(y)) : ctx.lineTo(cx(x), cy(y));
+  }
+  ctx.stroke();
+
+  // Draw probe points
+  function drawDot(xv, col, label) {
+    const dcx = cx(xv), dcy = cy(slice1D(fn, xv));
+    ctx.beginPath(); ctx.arc(dcx, dcy, 5, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(label, dcx, dcy - 12);
+  }
+
+  for (const { s, color } of stepsToRender) {
+    drawDot(s.m1, C.m1, 'm₁');
+    drawDot(s.m2, C.m2, 'm₂');
+    // Estimate midpoint
+    const estX = (s.a + s.b) / 2;
+    const ecx = cx(estX);
+    ctx.strokeStyle = C.est; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ecx, pad.top+10); ctx.lineTo(ecx, pad.top+ph); ctx.stroke();
+    ctx.fillStyle = C.est; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('x*', ecx, pad.top+8);
+  }
+
+  // Axis labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('x', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('f(x, 0)', 0, 0); ctx.restore();
+}
+
+function drawContour() {
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 32, right: 32, bottom: 48, left: 64 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+
+  const fn = getFn();
+  const range = Math.max(Math.abs(state.a), Math.abs(state.b)) + 1;
+  const xMin = -range, xMax = range, yMin2 = -range, yMax2 = range;
+  const RES = 80;
+  const imgData = ctx.createImageData(pw, ph);
+
+  let fMin = Infinity, fMax = -Infinity;
+  const vals = new Float32Array(RES*RES);
+  for (let yi = 0; yi < RES; yi++) {
+    for (let xi = 0; xi < RES; xi++) {
+      const x = xMin + xi/RES*(xMax-xMin);
+      const y = yMin2 + yi/RES*(yMax2-yMin2);
+      const v = fn(x, y);
+      vals[yi*RES+xi] = v;
+      if (v < fMin) fMin = v;
+      if (v > fMax) fMax = v;
+    }
+  }
+
+  for (let py = 0; py < ph; py++) {
+    for (let px = 0; px < pw; px++) {
+      const xi = Math.floor(px/pw*RES);
+      const yi = Math.floor(py/ph*RES);
+      const v = vals[yi*RES+xi];
+      const t = Math.pow((v - fMin) / (fMax - fMin + 1e-9), 0.4);
+      const idx = (py*pw + px) * 4;
+      imgData.data[idx]   = Math.round(13 + t*30);
+      imgData.data[idx+1] = Math.round(23 + t*60);
+      imgData.data[idx+2] = Math.round(48 + t*120);
+      imgData.data[idx+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, pad.left, pad.top);
+
+  function cxc(x) { return pad.left + (x-xMin)/(xMax-xMin)*pw; }
+  function cyc(y) { return pad.top + (1-(y-yMin2)/(yMax2-yMin2))*ph; }
+
+  // Contour lines
+  const levels = 8;
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.5;
+  for (let l = 1; l < levels; l++) {
+    const fLevel = fMin + (fMax-fMin)*l/levels;
+    const r2 = Math.sqrt(fLevel / (FUNCTIONS[state.fnKey].f(1,0) || 1)) * range;
+    ctx.beginPath();
+    ctx.arc(cxc(0), cyc(0), r2/(xMax-xMin)*pw*0.8, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cxc(xMin), cyc(0)); ctx.lineTo(cxc(xMax), cyc(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cxc(0), cyc(yMin2)); ctx.lineTo(cxc(0), cyc(yMax2)); ctx.stroke();
+
+  // Search interval overlay on x axis
+  if (state.currentStep > 0 && state.steps[state.currentStep-1]) {
+    const s = state.steps[state.currentStep-1];
+    const iy = cyc(0);
+    ctx.fillStyle = state.algo === 'golden' ? 'rgba(16,185,129,0.25)' : 'rgba(59,130,246,0.25)';
+    ctx.fillRect(cxc(s.a), iy-6, cxc(s.b)-cxc(s.a), 12);
+    ctx.fillStyle = C.m1;
+    ctx.beginPath(); ctx.arc(cxc(s.m1), iy, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = C.m2;
+    ctx.beginPath(); ctx.arc(cxc(s.m2), iy, 5, 0, Math.PI*2); ctx.fill();
+  }
+
+  // True minimum
+  const tm = FUNCTIONS[state.fnKey].min;
+  ctx.beginPath(); ctx.arc(cxc(tm.x), cyc(tm.y), 7, 0, Math.PI*2);
+  ctx.fillStyle = C.est; ctx.fill();
+  ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('x', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('y', 0, 0); ctx.restore();
+}
+
+function drawConvergence() {
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 32, right: 32, bottom: 48, left: 70 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+
+  const datasets = [];
+  if (state.stepsT.length) datasets.push({ steps: state.stepsT, color: C.curve, label: 'Ternary' });
+  if (state.stepsG.length) datasets.push({ steps: state.stepsG, color: C.curveG, label: 'Golden' });
+  if (!datasets.length) {
+    ctx.fillStyle = C.text; ctx.font = '13px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText('Nhấn Chạy để xem đồ thị hội tụ', W/2, H/2);
+    return;
+  }
+
+  const allWidths = datasets.flatMap(d => d.steps.map(s => s.width));
+  const wMax = Math.max(...allWidths);
+  const wMin = Math.min(...allWidths);
+  const nMax = Math.max(...datasets.map(d => d.steps.length));
+
+  function cx2(i) { return pad.left + i/nMax*pw; }
+  function cy2(w) {
+    const logW = Math.log10(Math.max(w, 1e-10));
+    const logMax = Math.log10(wMax+0.01);
+    const logMin = Math.log10(Math.max(wMin, 1e-10));
+    return pad.top + ph - (logW - logMin)/(logMax - logMin)*ph;
+  }
+
+  // Grid
+  ctx.strokeStyle = C.grid; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 8; i++) {
+    const x = pad.left + pw*i/8;
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+ph); ctx.stroke();
+    const y = pad.top + ph*i/8;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+pw, y); ctx.stroke();
+  }
+
+  // Curves
+  for (const { steps, color } of datasets) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath();
+    steps.forEach((s, i) => {
+      const x = cx2(i+1), y = cy2(s.width);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // Current step dot
+    if (state.currentStep > 0 && steps[state.currentStep-1]) {
+      const s = steps[state.currentStep-1];
+      ctx.beginPath(); ctx.arc(cx2(state.currentStep), cy2(s.width), 5, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+    }
+  }
+
+  // Tick labels
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  for (let i = 0; i <= nMax; i += Math.ceil(nMax/6)) {
+    ctx.fillText(i, cx2(i), pad.top+ph+16);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 5; i++) {
+    const logMax = Math.log10(wMax+0.01), logMin = Math.log10(Math.max(wMin,1e-10));
+    const logV = logMax - (logMax-logMin)*i/5;
+    const yp = pad.top + ph*i/5;
+    ctx.fillText(Math.pow(10, logV).toFixed(3), pad.left-5, yp+4);
+  }
+
+  // Legend
+  const lx = pad.left + pw - 120;
+  datasets.forEach(({ color, label }, i) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(lx, pad.top + 16 + i*20, 14, 3);
+    ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'left';
+    ctx.fillText(label, lx + 20, pad.top + 20 + i*20);
+  });
+
+  ctx.fillStyle = C.text; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('Bước', pad.left+pw/2, H-6);
+  ctx.save(); ctx.translate(14, pad.top+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('|b−a| (log)', 0, 0); ctx.restore();
+}
+
+function draw() {
+  resizeCanvas();
+  if (state.tab === 'plot1d') drawPlot1D();
+  else if (state.tab === 'contour') drawContour();
+  else drawConvergence();
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function updateStats() {
+  const total = state.steps.length;
+  const cur = state.currentStep;
+  document.getElementById('progressLabel').textContent = `Bước ${cur} / ${total}`;
+  document.getElementById('progressFill').style.width = total ? (cur/total*100)+'%' : '0%';
+
+  if (cur === 0 || !state.steps[cur-1]) {
+    ['statStep','statX','statFx','statWidth','statInterval','progressEps'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    return;
+  }
+
+  const s = state.steps[cur-1];
+  document.getElementById('statStep').textContent = s.step;
+  document.getElementById('statX').textContent = s.est.toFixed(5);
+  document.getElementById('statFx').textContent = slice1D(getFn(), s.est).toFixed(5);
+  document.getElementById('statWidth').textContent = s.width.toFixed(5);
+  document.getElementById('statInterval').textContent = `[${s.a.toFixed(4)}, ${s.b.toFixed(4)}]`;
+  document.getElementById('progressEps').textContent = `ε = ${s.width.toFixed(4)}`;
+}
+
+function addLog(s) {
+  const log = document.getElementById('logList');
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + (s.type === 'ternary' ? 'highlight-t' : 'highlight-g');
+  div.innerHTML =
+    `<span class="log-step">#${s.step}</span> ` +
+    `a=<span class="log-amber">${s.a.toFixed(3)}</span> ` +
+    `b=<span class="log-amber">${s.b.toFixed(3)}</span> ` +
+    `m₁=<span class="log-red">${s.m1.toFixed(3)}</span>(${s.fm1.toFixed(3)}) ` +
+    `m₂=<span class="log-green">${s.m2.toFixed(3)}</span>(${s.fm2.toFixed(3)}) ` +
+    `ε=${s.width.toFixed(4)}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function updateCompare() {
+  const sec = document.getElementById('compareSection');
+  if (state.algo !== 'both') { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const tbody = document.getElementById('compareBody');
+  tbody.innerHTML = '';
+
+  const datasets = [
+    { steps: state.stepsT, label: 'Ternary', cls: 'badge-t' },
+    { steps: state.stepsG, label: 'Golden', cls: 'badge-g' },
+  ];
+  for (const { steps, label, cls } of datasets) {
+    if (!steps.length) continue;
+    const last = steps[steps.length-1];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="badge ${cls}">${label}</span></td>
+      <td>${last.est.toFixed(4)}</td>
+      <td>${steps.length}</td>
+      <td>${last.width.toFixed(4)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function resetUI() {
+  document.getElementById('logList').innerHTML = '';
+  updateStats();
+  updateCompare();
+  draw();
+}
+
+// ============================================================
+// ANIMATION CONTROL
+// ============================================================
+function stopAnim() {
+  if (state.animTimer) { clearInterval(state.animTimer); state.animTimer = null; }
+  document.getElementById('btnRun').textContent = '▶ CHẠY';
+  document.getElementById('btnRun').classList.remove('running');
+}
+
+function startAnim() {
+  stopAnim();
+  buildAllSteps();
+  state.currentStep = 0;
+  document.getElementById('logList').innerHTML = '';
+  document.getElementById('btnRun').textContent = '■ STOP';
+  document.getElementById('btnRun').classList.add('running');
+  updateCompare();
+
+  state.animTimer = setInterval(() => {
+    if (state.currentStep >= state.steps.length) { stopAnim(); return; }
+    // Log both algos if mode=both
+    if (state.algo === 'both') {
+      if (state.stepsT[state.currentStep]) addLog(state.stepsT[state.currentStep]);
+      if (state.stepsG[state.currentStep]) addLog(state.stepsG[state.currentStep]);
+    } else {
+      addLog(state.steps[state.currentStep]);
+    }
+    state.currentStep++;
+    updateStats();
+    draw();
+  }, state.speed);
+}
+
+function stepOnce() {
+  if (!state.steps.length) {
+    buildAllSteps();
+    state.currentStep = 0;
+    document.getElementById('logList').innerHTML = '';
+    updateCompare();
+  }
+  if (state.currentStep >= state.steps.length) return;
+  if (state.algo === 'both') {
+    if (state.stepsT[state.currentStep]) addLog(state.stepsT[state.currentStep]);
+    if (state.stepsG[state.currentStep]) addLog(state.stepsG[state.currentStep]);
+  } else {
+    addLog(state.steps[state.currentStep]);
+  }
+  state.currentStep++;
+  updateStats();
+  draw();
+}
+
+function reset() {
+  stopAnim();
+  state.steps = []; state.stepsT = []; state.stepsG = [];
+  state.currentStep = 0;
+  resetUI();
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.getElementById('btnRun').addEventListener('click', () => {
+  if (state.animTimer) stopAnim(); else startAnim();
+});
+document.getElementById('btnStep').addEventListener('click', stepOnce);
+document.getElementById('btnReset').addEventListener('click', reset);
+
+document.getElementById('aSlider').addEventListener('input', function() {
+  state.a = +this.value;
+  document.getElementById('aOut').textContent = (+this.value).toFixed(1);
+  reset();
+});
+document.getElementById('bSlider').addEventListener('input', function() {
+  state.b = +this.value;
+  document.getElementById('bOut').textContent = (+this.value).toFixed(1);
+  reset();
+});
+document.getElementById('maxSlider').addEventListener('input', function() {
+  state.maxSteps = +this.value;
+  document.getElementById('maxOut').textContent = this.value;
+  reset();
+});
+document.getElementById('speedSlider').addEventListener('input', function() {
+  state.speed = +this.value;
+  document.getElementById('speedOut').textContent = this.value;
+});
+
+// Function buttons
+document.querySelectorAll('.fn-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.fn-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    state.fnKey = this.dataset.fn;
+    reset();
+  });
+});
+
+// Algo buttons
+document.querySelectorAll('.algo-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.algo-btn').forEach(b => {
+      b.classList.remove('active-t'); b.classList.remove('active-g');
+    });
+    const algo = this.dataset.algo;
+    state.algo = algo;
+    if (algo === 'ternary') this.classList.add('active-t');
+    else if (algo === 'golden') this.classList.add('active-g');
+    else { this.classList.add('active-t'); }
+    reset();
+  });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    state.tab = this.dataset.tab;
+    draw();
+  });
+});
+
+// Resize
+window.addEventListener('resize', draw);
+
+// Init
+draw();
+</script> -->
+</body>
+</html>
