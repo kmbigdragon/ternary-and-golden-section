@@ -1418,14 +1418,6 @@ draw();
 </script>
 
 <!-- // Slice 1D: tìm kiếm trên trục x với y=0
-function slice1D(fn, x) { return fn(x, 0); }
-
-// ============================================================
-// CORE: Ternary Search — tìm min hàm lồi trên [a, b]
-// Mỗi bước: chia đoạn thành 3 phần, loại 1/3 xa cực tiểu
-// ============================================================
-function ternarySearch(fn, a, b, maxSteps) {
-  const steps = [];
   for (let i = 0; i < maxSteps; i++) {
   // blablalbal test
     const m1 = a + (b - a) / 3;
