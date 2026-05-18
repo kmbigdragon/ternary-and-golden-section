@@ -1,0 +1,3 @@
+algorithm,avg_runtime,median_runtime,avg_sd,avg_iterations
+GoldenSection,701.14712,673.339,179.51809223200001,40.2
+Ternary,36112.22176,34873.078,5359.529872542,47.6
